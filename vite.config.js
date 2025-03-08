@@ -24,9 +24,18 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp'
+    }
   },
   optimizeDeps: {
     exclude: ['@dimforge/rapier3d']
+  },
+  resolve: {
+    alias: {
+      '@dimforge/rapier3d': '@dimforge/rapier3d/rapier_wasm3d.js'
+    }
   }
-}); 
+});

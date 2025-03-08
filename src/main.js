@@ -38,28 +38,41 @@ class Application {
      * Initialize the application
      */
     async init() {
-        console.log('Initializing application...');
-        
-        // Initialize physics
-        await this.physics.init();
-        
-        // Create ground
-        this.ground = this.physics.createGround(50);
-        this.groundMesh = this.scene.createGround(50);
-        
-        // Create character
-        this.character = new CharacterController(this.physics);
-        this.characterMesh = this.scene.createCharacter(0.5, 1.0);
-        
-        // Create additional platforms for testing
-        this.createTestPlatforms();
-        
-        // Start the game loop
-        this.isRunning = true;
-        this.lastTime = performance.now();
-        requestAnimationFrame(this.gameLoop.bind(this));
-        
-        console.log('Application initialized');
+        try {
+            console.log('Initializing application...');
+            
+            // Initialize physics
+            await this.physics.init();
+            console.log('Physics initialized successfully');
+            
+            // Create ground
+            this.ground = this.physics.createGround(50);
+            this.groundMesh = this.scene.createGround(50);
+            console.log('Ground created');
+            
+            // Create character
+            this.character = new CharacterController(this.physics);
+            this.characterMesh = this.scene.createCharacter(0.5, 1.0);
+            console.log('Character created');
+            
+            // Create additional platforms for testing
+            this.createTestPlatforms();
+            console.log('Platforms created');
+            
+            // Start the game loop
+            this.isRunning = true;
+            this.lastTime = performance.now();
+            requestAnimationFrame(this.gameLoop.bind(this));
+            
+            console.log('Application initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize application:', error);
+            document.body.innerHTML += `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                <h2>Initialization Error</h2>
+                <p>${error.message}</p>
+                <p>Please try refreshing the page or check the console for more details.</p>
+            </div>`;
+        }
     }
     
     /**

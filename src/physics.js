@@ -1,4 +1,5 @@
 import * as RAPIER from '@dimforge/rapier3d';
+import { initRapier, getRapier } from './rapier-init.js';
 
 /**
  * Physics world manager using Rapier
@@ -9,6 +10,7 @@ export class PhysicsWorld {
         this.world = null;
         this.bodies = new Map();
         this.gravity = { x: 0.0, y: -9.81, z: 0.0 };
+        this.RAPIER = null;
     }
 
     /**
@@ -16,14 +18,19 @@ export class PhysicsWorld {
      * @returns {Promise<void>}
      */
     async init() {
-        // Wait for Rapier to initialize
-        await RAPIER.init();
-        
-        // Create a new physics world
-        this.world = new RAPIER.World(this.gravity);
-        this.initialized = true;
-        
-        console.log('Physics world initialized');
+        try {
+            // Wait for Rapier to initialize
+            this.RAPIER = await initRapier();
+            
+            // Create a new physics world
+            this.world = new RAPIER.World(this.gravity);
+            this.initialized = true;
+            
+            console.log('Physics world initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize physics world:', error);
+            throw error;
+        }
     }
 
     /**

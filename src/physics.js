@@ -1,125 +1,219 @@
 import * as RAPIER from '@dimforge/rapier3d';
+import { initRapier, getRapier } from './rapier-init.js';
 
+/**
+ * Physics world manager using Rapier
+ */
 export class PhysicsWorld {
     constructor() {
+        this.initialized = false;
         this.world = null;
-        this.rigidBodies = new Map();
-        this.colliders = new Map();
+        this.bodies = new Map();
+        this.gravity = { x: 0.0, y: -9.81, z: 0.0 };
+        this.RAPIER = null;
     }
 
+    /**
+     * Initialize the physics world
+     * @returns {Promise<void>}
+     */
     async init() {
-        await RAPIER.init();
-        this.world = new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 });
+        try {
+            console.log('PhysicsWorld: Starting initialization...');
+            
+            // Initialize Rapier directly without using init()
+            await RAPIER.init();
+            this.RAPIER = RAPIER;
+            
+            if (!this.RAPIER) {
+                throw new Error('Failed to initialize Rapier: No instance returned');
+            }
+            
+            console.log('PhysicsWorld: Rapier initialized, creating world...');
+            
+            // Create a new physics world
+            this.world = new this.RAPIER.World(this.gravity);
+            
+            if (!this.world) {
+                throw new Error('Failed to create physics world');
+            }
+            
+            this.initialized = true;
+            console.log('PhysicsWorld: World created successfully');
+        } catch (error) {
+            console.error('Failed to initialize physics world:', error);
+            this.initialized = false;
+            throw error;
+        }
     }
 
-    createGround(size) {
-        const groundDesc = RAPIER.RigidBodyDesc.fixed();
-        const groundBody = this.world.createRigidBody(groundDesc);
+    /**
+     * Create a ground plane
+     * @param {number} size - Size of the ground plane
+     * @returns {Object} - Ground body and collider
+     */
+    createGround(size = 50) {
+        if (!this.initialized) {
+            console.error('Physics world not initialized');
+            return null;
+        }
 
+        // Create a static rigid body for the ground
+        const groundBodyDesc = RAPIER.RigidBodyDesc.fixed();
+        const groundBody = this.world.createRigidBody(groundBodyDesc);
+
+        // Create a collider for the ground (flat box)
         const groundColliderDesc = RAPIER.ColliderDesc.cuboid(size, 0.1, size);
         const groundCollider = this.world.createCollider(groundColliderDesc, groundBody);
 
-        this.rigidBodies.set('ground', groundBody);
-        this.colliders.set('ground', groundCollider);
+        // Store the body in our map
+        const id = groundBody.handle;
+        this.bodies.set(id, { body: groundBody, collider: groundCollider, type: 'ground' });
 
-        return groundBody;
+        return { id, body: groundBody, collider: groundCollider };
     }
 
-    createCharacter(radius, height) {
-        const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
-            .setTranslation(0, 5, 0)
-            .setLinearDamping(0.1)
-            .setAngularDamping(0.5);
+    /**
+     * Create a character capsule
+     * @param {Object} position - Initial position
+     * @param {number} radius - Radius of the capsule
+     * @param {number} height - Height of the capsule (excluding hemispheres)
+     * @returns {Object} - Character body and collider
+     */
+    createCharacter(position = { x: 0, y: 5, z: 0 }, radius = 0.5, height = 1.0) {
+        if (!this.initialized) {
+            console.error('Physics world not initialized');
+            return null;
+        }
 
-        const body = this.world.createRigidBody(bodyDesc);
+        // Create a dynamic rigid body for the character
+        const characterBodyDesc = RAPIER.RigidBodyDesc.dynamic()
+            .setTranslation(position.x, position.y, position.z)
+            // Lock rotations to prevent the character from falling over
+            .setCanRotate(false);
+        
+        const characterBody = this.world.createRigidBody(characterBodyDesc);
 
-        const colliderDesc = RAPIER.ColliderDesc.capsule(height / 2, radius)
-            .setFriction(0.7)
-            .setRestitution(0.3);
+        // Create a capsule collider
+        const characterColliderDesc = RAPIER.ColliderDesc.capsule(height / 2, radius);
+        const characterCollider = this.world.createCollider(characterColliderDesc, characterBody);
 
-        const collider = this.world.createCollider(colliderDesc, body);
+        // Store the body in our map
+        const id = characterBody.handle;
+        this.bodies.set(id, { body: characterBody, collider: characterCollider, type: 'character' });
 
-        this.rigidBodies.set('character', body);
-        this.colliders.set('character', collider);
-
-        return body;
+        return { id, body: characterBody, collider: characterCollider };
     }
 
+    /**
+     * Create a platform
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {number} z - Z position
+     * @param {number} width - Width of platform
+     * @param {number} height - Height of platform
+     * @param {number} depth - Depth of platform
+     * @returns {Object} - Platform body and collider
+     */
     createPlatform(x, y, z, width, height, depth) {
-        const platformDesc = RAPIER.RigidBodyDesc.fixed()
+        if (!this.initialized) {
+            console.error('Physics world not initialized');
+            return null;
+        }
+
+        // Create a static rigid body for the platform
+        const platformBodyDesc = RAPIER.RigidBodyDesc.fixed()
             .setTranslation(x, y, z);
+        const platformBody = this.world.createRigidBody(platformBodyDesc);
 
-        const platformBody = this.world.createRigidBody(platformDesc);
-
-        const platformColliderDesc = RAPIER.ColliderDesc.cuboid(width / 2, height / 2, depth / 2)
-            .setFriction(0.8)
-            .setRestitution(0.2);
-
+        // Create a collider for the platform
+        const platformColliderDesc = RAPIER.ColliderDesc.cuboid(width / 2, height / 2, depth / 2);
         const platformCollider = this.world.createCollider(platformColliderDesc, platformBody);
 
-        const id = `platform_${x}_${y}_${z}`;
-        this.rigidBodies.set(id, platformBody);
-        this.colliders.set(id, platformCollider);
+        // Store the body in our map
+        const id = platformBody.handle;
+        this.bodies.set(id, { body: platformBody, collider: platformCollider, type: 'platform' });
 
-        return platformBody;
+        return { id, body: platformBody, collider: platformCollider };
     }
 
-    step(deltaTime) {
-        this.world.step();
-    }
+    /**
+     * Check if a body is grounded (in contact with the ground)
+     * @param {RAPIER.RigidBody} body - The body to check
+     * @param {number} rayLength - Length of the ray to cast downward
+     * @returns {boolean} - Whether the body is grounded
+     */
+    isGrounded(body, rayLength = 0.6) {
+        if (!this.initialized || !body) {
+            return false;
+        }
 
-    getRigidBody(id) {
-        return this.rigidBodies.get(id);
-    }
+        const position = body.translation();
+        const rayDir = { x: 0, y: -1, z: 0 };
 
-    getCollider(id) {
-        return this.colliders.get(id);
-    }
-
-    isCharacterGrounded() {
-        const character = this.rigidBodies.get('character');
-        if (!character) return false;
-
-        const position = character.translation();
+        // Cast a ray downward from the body's position
+        // Offset the ray start position slightly to avoid self-intersection
         const ray = new RAPIER.Ray(
-            { x: position.x, y: position.y, z: position.z },
-            { x: 0, y: -1, z: 0 }
+            { x: position.x, y: position.y - 0.1, z: position.z },
+            { x: rayDir.x, y: rayDir.y, z: rayDir.z }
         );
 
+        // Check for intersection with any collider
         const hit = this.world.castRay(
             ray,
-            0.2,
+            rayLength,
             true,
             undefined,
             undefined,
             undefined,
-            character
+            body // Exclude the character's own collider
         );
 
         return hit !== null;
     }
 
-    applyCharacterForce(force) {
-        const character = this.rigidBodies.get('character');
-        if (character) {
-            character.applyImpulse(force, true);
-        }
+    /**
+     * Step the physics simulation forward
+     * @param {number} deltaTime - Time step in seconds
+     */
+    step(deltaTime) {
+        if (!this.initialized) return;
+
+        // Step the physics world with proper time step
+        this.world.step({ dt: deltaTime });
     }
 
-    setCharacterVelocity(velocity) {
-        const character = this.rigidBodies.get('character');
-        if (character) {
-            character.setLinvel(velocity, true);
-        }
+    /**
+     * Get the position of a rigid body
+     * @param {RAPIER.RigidBody} body - The rigid body
+     * @returns {Object} - Position as {x, y, z}
+     */
+    getBodyPosition(body) {
+        if (!body) return { x: 0, y: 0, z: 0 };
+        
+        const position = body.translation();
+        return { x: position.x, y: position.y, z: position.z };
     }
 
-    getCharacterVelocity() {
-        const character = this.rigidBodies.get('character');
-        return character ? character.linvel() : { x: 0, y: 0, z: 0 };
+    /**
+     * Set the linear velocity of a rigid body
+     * @param {RAPIER.RigidBody} body - The rigid body
+     * @param {Object} velocity - Velocity as {x, y, z}
+     */
+    setBodyVelocity(body, velocity) {
+        if (!body) return;
+        
+        body.setLinvel({ x: velocity.x, y: velocity.y, z: velocity.z }, true);
     }
 
-    getCharacterPosition() {
-        const character = this.rigidBodies.get('character');
-        return character ? character.translation() : { x: 0, y: 0, z: 0 };
+    /**
+     * Apply an impulse to a rigid body
+     * @param {RAPIER.RigidBody} body - The rigid body
+     * @param {Object} impulse - Impulse as {x, y, z}
+     */
+    applyImpulse(body, impulse) {
+        if (!body) return;
+        
+        body.applyImpulse({ x: impulse.x, y: impulse.y, z: impulse.z }, true);
     }
 }

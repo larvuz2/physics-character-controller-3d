@@ -152,4 +152,4 @@ app.init().catch(console.error);
 console.log('Controls:');
 console.log('W, A, S, D - Move (relative to camera)');
 console.log('Space - Jump');
-console.log('Mouse - Hold and drag to rotate camera'); 
+console.log('Mouse - Hold and drag to rotate camera');

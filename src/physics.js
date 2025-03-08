@@ -195,4 +195,4 @@ export class PhysicsWorld {
         
         body.applyImpulse({ x: impulse.x, y: impulse.y, z: impulse.z }, true);
     }
-} 
+}

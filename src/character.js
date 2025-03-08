@@ -207,4 +207,4 @@ export class CharacterController {
     getState() {
         return { ...this.state };
     }
-} 
+}

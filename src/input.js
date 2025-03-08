@@ -140,4 +140,4 @@ export class InputHandler {
     isJumping() {
         return this.keys.jump;
     }
-} 
+}

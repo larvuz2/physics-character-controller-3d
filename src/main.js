@@ -29,7 +29,8 @@ class Application {
         // Debug info
         this.debugInfo = {
             showDebug: true,
-            lastJumpTime: 0
+            lastJumpTime: 0,
+            lastGroundedState: true
         };
     }
     
@@ -94,8 +95,8 @@ class Application {
     gameLoop(currentTime) {
         if (!this.isRunning) return;
         
-        // Calculate delta time in seconds
-        const deltaTime = (currentTime - this.lastTime) / 1000;
+        // Calculate delta time in seconds (clamped to avoid large jumps)
+        const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.1);
         this.lastTime = currentTime;
         
         // Update physics
@@ -114,10 +115,24 @@ class Application {
         // Debug info
         if (this.debugInfo.showDebug) {
             const characterState = this.character.getState();
+            
+            // Log jump events
             if (characterState.isJumping && !this.debugInfo.lastJumpState) {
                 this.debugInfo.lastJumpTime = currentTime;
                 console.log('Jump started!');
             }
+            
+            // Log landing events
+            if (!characterState.isJumping && this.debugInfo.lastJumpState) {
+                console.log('Landed after', ((currentTime - this.debugInfo.lastJumpTime) / 1000).toFixed(2), 'seconds');
+            }
+            
+            // Log ground state changes
+            if (characterState.isGrounded !== this.debugInfo.lastGroundedState) {
+                console.log('Grounded state changed to:', characterState.isGrounded);
+                this.debugInfo.lastGroundedState = characterState.isGrounded;
+            }
+            
             this.debugInfo.lastJumpState = characterState.isJumping;
         }
         

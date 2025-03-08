@@ -12,11 +12,11 @@ export class CharacterController {
         
         // Character options
         this.options = {
-            moveSpeed: 5.0,
-            jumpForce: 10.0,
-            jumpCooldown: 0.3,
-            coyoteTime: 0.1,  // Time window where player can still jump after leaving ground
-            jumpBufferTime: 0.1,  // Time window to queue a jump before landing
+            moveSpeed: 7.0,
+            jumpForce: 15.0,
+            jumpCooldown: 0.2,
+            coyoteTime: 0.15,
+            jumpBufferTime: 0.15,
             ...options
         };
 
@@ -28,7 +28,8 @@ export class CharacterController {
             coyoteTimeTimer: 0,
             jumpBufferTimer: 0,
             velocity: { x: 0, y: 0, z: 0 },
-            wasGrounded: false
+            wasGrounded: false,
+            jumpRequested: false
         };
 
         // Create the character physics body
@@ -118,37 +119,54 @@ export class CharacterController {
      * @param {number} deltaTime - Time since last update
      */
     handleJump(input, deltaTime) {
-        // Check if jump button was just pressed
-        if (input.isJumping() && !this.state.isJumping) {
+        // Track if jump was just pressed this frame
+        const jumpPressed = input.isJumping();
+        
+        // Set jump requested flag if jump button was just pressed
+        if (jumpPressed && !this.state.jumpRequested) {
+            this.state.jumpRequested = true;
+            
             // If we're not grounded or in coyote time, set jump buffer
             if (!this.state.isGrounded && this.state.coyoteTimeTimer <= 0) {
                 this.state.jumpBufferTimer = this.options.jumpBufferTime;
-                return;
+                console.log('Jump buffered');
             }
+        }
+        
+        // Clear jump requested flag if button is released
+        if (!jumpPressed) {
+            this.state.jumpRequested = false;
+        }
+        
+        // Try to jump if:
+        // 1. Jump was requested AND
+        // 2. (We're grounded OR in coyote time) AND
+        // 3. Jump cooldown is over
+        if (this.state.jumpRequested && 
+            (this.state.isGrounded || this.state.coyoteTimeTimer > 0) && 
+            this.state.jumpCooldownTimer <= 0) {
             
-            // If we can jump (grounded or in coyote time) and cooldown is over
-            if ((this.state.isGrounded || this.state.coyoteTimeTimer > 0) && 
-                this.state.jumpCooldownTimer <= 0) {
-                // Apply jump impulse
-                this.physics.applyImpulse(this.character.body, { 
-                    x: 0, 
-                    y: this.options.jumpForce, 
-                    z: 0 
-                });
-                
-                // Set jump state
-                this.state.isJumping = true;
-                this.state.isGrounded = false;
-                this.state.coyoteTimeTimer = 0;
-                this.state.jumpCooldownTimer = this.options.jumpCooldown;
-                
-                console.log('Jump executed!');
-            }
+            // Apply jump impulse
+            this.physics.applyImpulse(this.character.body, { 
+                x: 0, 
+                y: this.options.jumpForce, 
+                z: 0 
+            });
+            
+            // Set jump state
+            this.state.isJumping = true;
+            this.state.isGrounded = false;
+            this.state.coyoteTimeTimer = 0;
+            this.state.jumpCooldownTimer = this.options.jumpCooldown;
+            this.state.jumpRequested = false; // Clear the request
+            
+            console.log('Jump executed!');
         }
         
         // Check if we should execute a buffered jump
         if (this.state.jumpBufferTimer > 0 && this.state.isGrounded && 
             this.state.jumpCooldownTimer <= 0) {
+            
             // Apply jump impulse
             this.physics.applyImpulse(this.character.body, { 
                 x: 0, 

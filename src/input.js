@@ -33,6 +33,11 @@ export class InputHandler {
      * @param {KeyboardEvent} event 
      */
     onKeyDown(event) {
+        // Prevent default behavior for game controls
+        if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'Space'].includes(event.code)) {
+            event.preventDefault();
+        }
+        
         switch (event.code) {
             case 'KeyW':
                 this.keys.forward = true;
@@ -57,6 +62,11 @@ export class InputHandler {
      * @param {KeyboardEvent} event 
      */
     onKeyUp(event) {
+        // Prevent default behavior for game controls
+        if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'Space'].includes(event.code)) {
+            event.preventDefault();
+        }
+        
         switch (event.code) {
             case 'KeyW':
                 this.keys.forward = false;

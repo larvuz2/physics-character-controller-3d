@@ -131,8 +131,9 @@ export class PhysicsWorld {
         const rayDir = { x: 0, y: -1, z: 0 };
 
         // Cast a ray downward from the body's position
+        // Offset the ray start position slightly to avoid self-intersection
         const ray = new RAPIER.Ray(
-            { x: position.x, y: position.y, z: position.z },
+            { x: position.x, y: position.y - 0.1, z: position.z },
             { x: rayDir.x, y: rayDir.y, z: rayDir.z }
         );
 
@@ -157,8 +158,8 @@ export class PhysicsWorld {
     step(deltaTime) {
         if (!this.initialized) return;
 
-        // Step the physics world
-        this.world.step();
+        // Step the physics world with proper time step
+        this.world.step({ dt: deltaTime });
     }
 
     /**

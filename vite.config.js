@@ -32,10 +32,6 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['@dimforge/rapier3d']
-  },
-  resolve: {
-    alias: {
-      '@dimforge/rapier3d': '@dimforge/rapier3d/rapier_wasm3d.js'
-    }
   }
+  // Remove the alias as it's causing issues with the build
 });

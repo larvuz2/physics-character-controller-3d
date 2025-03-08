@@ -1,7 +1,7 @@
 /**
  * Helper module to initialize Rapier WebAssembly
  */
-import RAPIER from '@dimforge/rapier3d';
+import * as RAPIER from '@dimforge/rapier3d';
 
 let rapierInstance = null;
 

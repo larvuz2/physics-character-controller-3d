@@ -74,4 +74,8 @@ Open your browser and navigate to `http://localhost:5173` (or the URL shown in y
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Updates
+
+This project has been updated with improved physics handling and better character controls. The character now responds more naturally to environmental collisions and has smoother movement transitions. 

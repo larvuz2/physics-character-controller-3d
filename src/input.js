@@ -1,143 +1,123 @@
-/**
- * Input handler for keyboard controls
- */
 export class InputHandler {
     constructor() {
-        // Key states
-        this.keys = {
-            forward: false,  // W
-            backward: false, // S
-            left: false,     // A
-            right: false,    // D
-            jump: false      // Space
-        };
-
-        // Bind event listeners
-        window.addEventListener('keydown', this.onKeyDown.bind(this));
-        window.addEventListener('keyup', this.onKeyUp.bind(this));
-        
-        // Reference to scene manager (will be set from main.js)
+        this.keys = new Set();
+        this.mouseButtons = new Set();
+        this.mousePosition = { x: 0, y: 0 };
+        this.mouseDelta = { x: 0, y: 0 };
         this.sceneManager = null;
+
+        // Bind event handlers
+        this.handleKeyDown = this.handleKeyDown.bind(this);
+        this.handleKeyUp = this.handleKeyUp.bind(this);
+        this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleContextMenu = this.handleContextMenu.bind(this);
+
+        // Add event listeners
+        window.addEventListener('keydown', this.handleKeyDown);
+        window.addEventListener('keyup', this.handleKeyUp);
+        window.addEventListener('mousedown', this.handleMouseDown);
+        window.addEventListener('mouseup', this.handleMouseUp);
+        window.addEventListener('mousemove', this.handleMouseMove);
+        window.addEventListener('contextmenu', this.handleContextMenu);
+
+        // Lock pointer on click
+        document.addEventListener('click', () => {
+            document.body.requestPointerLock();
+        });
     }
 
-    /**
-     * Set the scene manager reference
-     * @param {Object} sceneManager - Scene manager instance
-     */
     setSceneManager(sceneManager) {
         this.sceneManager = sceneManager;
     }
 
-    /**
-     * Handle keydown events
-     * @param {KeyboardEvent} event 
-     */
-    onKeyDown(event) {
-        // Prevent default behavior for game controls
-        if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'Space'].includes(event.code)) {
-            event.preventDefault();
-        }
-        
-        switch (event.code) {
-            case 'KeyW':
-                this.keys.forward = true;
-                break;
-            case 'KeyS':
-                this.keys.backward = true;
-                break;
-            case 'KeyA':
-                this.keys.left = true;
-                break;
-            case 'KeyD':
-                this.keys.right = true;
-                break;
-            case 'Space':
-                this.keys.jump = true;
-                break;
+    handleKeyDown(event) {
+        this.keys.add(event.key.toLowerCase());
+    }
+
+    handleKeyUp(event) {
+        this.keys.delete(event.key.toLowerCase());
+    }
+
+    handleMouseDown(event) {
+        this.mouseButtons.add(event.button);
+    }
+
+    handleMouseUp(event) {
+        this.mouseButtons.delete(event.button);
+    }
+
+    handleMouseMove(event) {
+        if (document.pointerLockElement === document.body) {
+            this.mouseDelta.x = event.movementX;
+            this.mouseDelta.y = event.movementY;
+
+            if (this.sceneManager) {
+                this.sceneManager.handleMouseMove(event.movementX, event.movementY);
+            }
         }
     }
 
-    /**
-     * Handle keyup events
-     * @param {KeyboardEvent} event 
-     */
-    onKeyUp(event) {
-        // Prevent default behavior for game controls
-        if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'Space'].includes(event.code)) {
-            event.preventDefault();
-        }
-        
-        switch (event.code) {
-            case 'KeyW':
-                this.keys.forward = false;
-                break;
-            case 'KeyS':
-                this.keys.backward = false;
-                break;
-            case 'KeyA':
-                this.keys.left = false;
-                break;
-            case 'KeyD':
-                this.keys.right = false;
-                break;
-            case 'Space':
-                this.keys.jump = false;
-                break;
-        }
+    handleContextMenu(event) {
+        event.preventDefault();
     }
 
-    /**
-     * Get the movement direction based on current key states and camera orientation
-     * @returns {Object} x and z components of movement direction
-     */
-    getMovementDirection() {
+    isKeyPressed(key) {
+        return this.keys.has(key.toLowerCase());
+    }
+
+    isMouseButtonPressed(button) {
+        return this.mouseButtons.has(button);
+    }
+
+    getMouseDelta() {
+        const delta = { ...this.mouseDelta };
+        this.mouseDelta = { x: 0, y: 0 };
+        return delta;
+    }
+
+    getMoveDirection() {
         const direction = { x: 0, z: 0 };
-        
-        // If no scene manager is set, use default directions
-        if (!this.sceneManager) {
-            if (this.keys.forward) direction.z -= 1;
-            if (this.keys.backward) direction.z += 1;
-            if (this.keys.left) direction.x -= 1;
-            if (this.keys.right) direction.x += 1;
-        } else {
-            // Get camera directions
-            const forward = this.sceneManager.getCameraForwardDirection();
-            const right = this.sceneManager.getCameraRightDirection();
-            
-            // Apply input based on camera orientation
-            if (this.keys.forward) {
-                direction.x += forward.x;
-                direction.z += forward.z;
-            }
-            if (this.keys.backward) {
-                direction.x -= forward.x;
-                direction.z -= forward.z;
-            }
-            if (this.keys.right) {
-                direction.x += right.x;
-                direction.z += right.z;
-            }
-            if (this.keys.left) {
-                direction.x -= right.x;
-                direction.z -= right.z;
-            }
-        }
 
-        // Normalize the direction vector if moving
-        const length = Math.sqrt(direction.x * direction.x + direction.z * direction.z);
-        if (length > 0) {
+        if (this.isKeyPressed('w')) direction.z -= 1;
+        if (this.isKeyPressed('s')) direction.z += 1;
+        if (this.isKeyPressed('a')) direction.x -= 1;
+        if (this.isKeyPressed('d')) direction.x += 1;
+
+        // Normalize diagonal movement
+        if (direction.x !== 0 && direction.z !== 0) {
+            const length = Math.sqrt(direction.x * direction.x + direction.z * direction.z);
             direction.x /= length;
             direction.z /= length;
+        }
+
+        // Apply camera rotation to movement direction
+        if (this.sceneManager) {
+            const cameraRotation = this.sceneManager.getCameraRotation();
+            const cos = Math.cos(cameraRotation);
+            const sin = Math.sin(cameraRotation);
+
+            const rotatedX = direction.x * cos - direction.z * sin;
+            const rotatedZ = direction.x * sin + direction.z * cos;
+
+            direction.x = rotatedX;
+            direction.z = rotatedZ;
         }
 
         return direction;
     }
 
-    /**
-     * Check if the jump key is pressed
-     * @returns {boolean}
-     */
     isJumping() {
-        return this.keys.jump;
+        return this.isKeyPressed(' ');
+    }
+
+    cleanup() {
+        window.removeEventListener('keydown', this.handleKeyDown);
+        window.removeEventListener('keyup', this.handleKeyUp);
+        window.removeEventListener('mousedown', this.handleMouseDown);
+        window.removeEventListener('mouseup', this.handleMouseUp);
+        window.removeEventListener('mousemove', this.handleMouseMove);
+        window.removeEventListener('contextmenu', this.handleContextMenu);
     }
 }

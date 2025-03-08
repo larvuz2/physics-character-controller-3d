@@ -10,7 +10,9 @@ A simple physics-based character controller using Rapier physics engine and Thre
 - Ground collision detection
 - 3D rendering with Three.js
 - Orbit camera controls
-- Fallback physics implementation for environments without WebAssembly support
+- Smooth character transitions
+- Environmental collision handling
+- Netlify deployment support
 
 ## Controls
 
@@ -60,33 +62,18 @@ Open your browser and navigate to `http://localhost:5173` (or the URL shown in y
 - `src/` - Source code directory
   - `main.js` - Entry point
   - `physics.js` - Rapier physics setup
-  - `physics-fallback.js` - Fallback physics implementation
-  - `rapier-init.js` - WebAssembly initialization helper
   - `character.js` - Character controller
   - `input.js` - Input handling
   - `scene.js` - Three.js scene setup
 
 ## How It Works
 
-1. The physics world is initialized with Rapier (or falls back to simplified physics if WebAssembly fails)
+1. The physics world is initialized with Rapier
 2. A ground plane and character capsule are created in both the physics world and the 3D scene
 3. Input from WASD and space is captured and converted to movement directions
 4. The character controller applies forces or velocities to the physics body based on input
 5. The 3D mesh positions are updated based on the physics simulation
 6. The camera follows the character
-
-## Third-Person Camera
-
-The camera is positioned behind and slightly above the character, providing a good view of the character and surroundings. The camera rotates around the character based on mouse input, and the character moves relative to the camera's orientation.
-
-## Jumping Mechanics
-
-The character can jump when grounded by pressing the space bar. The jump applies an upward impulse to the character, and gravity brings it back down. Features include:
-
-- Ground detection to prevent mid-air jumping
-- Coyote time to allow jumping shortly after leaving a platform
-- Jump buffering to queue jumps before landing
-- Variable jump height based on how long the space bar is held
 
 ## License
 
@@ -94,10 +81,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Updates
 
-This project has been updated with improved physics handling and better character controls. The character now responds more naturally to environmental collisions and has smoother movement transitions. 
-
-The latest update includes Netlify deployment configuration for easy hosting and sharing of the project. 
-
-The WebAssembly configuration has been fixed to ensure proper building and deployment on Netlify.
-
-A fallback physics implementation has been added for environments where WebAssembly initialization fails, ensuring the application works across all browsers and platforms.
+### Latest Updates
+- Enhanced physics handling for more realistic character movement
+- Improved character controls with smoother transitions
+- Added Netlify deployment configuration
+- Fixed WebAssembly configuration for Netlify deployment
+- Optimized collision detection and response
+- Improved camera following mechanics
+- Added support for dynamic environment interactions

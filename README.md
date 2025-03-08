@@ -81,3 +81,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 This project has been updated with improved physics handling and better character controls. The character now responds more naturally to environmental collisions and has smoother movement transitions. 
 
 The latest update includes Netlify deployment configuration for easy hosting and sharing of the project. 
+
+The WebAssembly configuration has been fixed to ensure proper building and deployment on Netlify. 

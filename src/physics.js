@@ -85,6 +85,38 @@ export class PhysicsWorld {
     }
 
     /**
+     * Create a platform
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {number} z - Z position
+     * @param {number} width - Width of platform
+     * @param {number} height - Height of platform
+     * @param {number} depth - Depth of platform
+     * @returns {Object} - Platform body and collider
+     */
+    createPlatform(x, y, z, width, height, depth) {
+        if (!this.initialized) {
+            console.error('Physics world not initialized');
+            return null;
+        }
+
+        // Create a static rigid body for the platform
+        const platformBodyDesc = RAPIER.RigidBodyDesc.fixed()
+            .setTranslation(x, y, z);
+        const platformBody = this.world.createRigidBody(platformBodyDesc);
+
+        // Create a collider for the platform
+        const platformColliderDesc = RAPIER.ColliderDesc.cuboid(width / 2, height / 2, depth / 2);
+        const platformCollider = this.world.createCollider(platformColliderDesc, platformBody);
+
+        // Store the body in our map
+        const id = platformBody.handle;
+        this.bodies.set(id, { body: platformBody, collider: platformCollider, type: 'platform' });
+
+        return { id, body: platformBody, collider: platformCollider };
+    }
+
+    /**
      * Check if a body is grounded (in contact with the ground)
      * @param {RAPIER.RigidBody} body - The body to check
      * @param {number} rayLength - Length of the ray to cast downward

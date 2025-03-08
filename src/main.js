@@ -13,6 +13,9 @@ class Application {
         this.scene = new SceneManager();
         this.input = new InputHandler();
         
+        // Connect scene manager to input handler
+        this.input.setSceneManager(this.scene);
+        
         // Game state
         this.lastTime = 0;
         this.isRunning = false;
@@ -22,6 +25,12 @@ class Application {
         this.characterMesh = null;
         this.ground = null;
         this.groundMesh = null;
+        
+        // Debug info
+        this.debugInfo = {
+            showDebug: true,
+            lastJumpTime: 0
+        };
     }
     
     /**
@@ -41,12 +50,41 @@ class Application {
         this.character = new CharacterController(this.physics);
         this.characterMesh = this.scene.createCharacter(0.5, 1.0);
         
+        // Create additional platforms for testing
+        this.createTestPlatforms();
+        
         // Start the game loop
         this.isRunning = true;
         this.lastTime = performance.now();
         requestAnimationFrame(this.gameLoop.bind(this));
         
         console.log('Application initialized');
+    }
+    
+    /**
+     * Create test platforms for jumping
+     */
+    createTestPlatforms() {
+        // Create a few platforms at different heights
+        const platformPositions = [
+            { x: 5, y: 2, z: 5, size: 3 },
+            { x: -5, y: 4, z: -5, size: 3 },
+            { x: 10, y: 6, z: 0, size: 3 }
+        ];
+        
+        platformPositions.forEach(platform => {
+            // Create physics body
+            const platformBody = this.physics.createPlatform(
+                platform.x, platform.y, platform.z,
+                platform.size, 0.5, platform.size
+            );
+            
+            // Create visual mesh
+            const platformMesh = this.scene.createPlatform(
+                platform.x, platform.y, platform.z,
+                platform.size, 0.5, platform.size
+            );
+        });
     }
     
     /**
@@ -73,6 +111,16 @@ class Application {
         // Update camera to follow character
         this.scene.updateCameraTarget(characterPosition);
         
+        // Debug info
+        if (this.debugInfo.showDebug) {
+            const characterState = this.character.getState();
+            if (characterState.isJumping && !this.debugInfo.lastJumpState) {
+                this.debugInfo.lastJumpTime = currentTime;
+                console.log('Jump started!');
+            }
+            this.debugInfo.lastJumpState = characterState.isJumping;
+        }
+        
         // Render the scene
         this.scene.render();
         
@@ -87,6 +135,6 @@ app.init().catch(console.error);
 
 // Display controls info in console
 console.log('Controls:');
-console.log('W, A, S, D - Move');
+console.log('W, A, S, D - Move (relative to camera)');
 console.log('Space - Jump');
-console.log('Mouse - Rotate camera'); 
+console.log('Mouse - Hold and drag to rotate camera'); 

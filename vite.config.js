@@ -3,35 +3,35 @@ import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 
 export default defineConfig({
-  base: '/',
   plugins: [
     wasm(),
     topLevelAwait()
   ],
+  optimizeDeps: {
+    exclude: ['@dimforge/rapier3d']
+  },
   build: {
+    target: 'esnext',
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
-    minify: true,
-    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks: {
-          rapier: ['@dimforge/rapier3d']
+          rapier: ['@dimforge/rapier3d'],
+          three: ['three']
         }
+      }
+    },
+    sourcemap: true,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: true
       }
     }
   },
   server: {
-    port: 3000,
-    open: true,
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
-    }
-  },
-  optimizeDeps: {
-    exclude: ['@dimforge/rapier3d']
+    open: true
   }
-  // Remove the alias as it's causing issues with the build
 });
